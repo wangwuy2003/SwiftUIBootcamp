@@ -15,14 +15,25 @@ struct OnboardingView: View {
      2 - Add age
      3 - Gender
      */
-    @State var onboardingState: Int = 0
+    @State var onboardingState: Int = 1
     let transition: AnyTransition = .asymmetric(
         insertion: .move(edge: .trailing),
         removal: .move(edge: .leading))
     
+    //onboarding input
     @State var name: String = ""
     @State var age: Double = 50
     @State var gender: String = ""
+    
+    // alert
+    @State var alertTitle: String = ""
+    @State var showAlert: Bool = false
+    
+    // appstorage
+    @AppStorage("name") var currentUserName: String?
+    @AppStorage("age") var currentUserAge: String?
+    @AppStorage("gender") var currentUserGender: String?
+    @AppStorage("signed_in") var currentUserSignedIn: Bool = false
     
     var body: some View {
         ZStack {
@@ -60,6 +71,9 @@ struct OnboardingView: View {
                 bottomButton
             }
             .padding(30)
+        }
+        .alert(isPresented: $showAlert) {
+            return Alert(title: Text(alertTitle))
         }
     }
 }
@@ -204,14 +218,47 @@ extension OnboardingView {
 
 extension OnboardingView {
     func handleNextButtonPressed() {
+        // check input
+        switch onboardingState {
+        case 1:
+            guard name.count >= 3 else {
+                showAlert(title: "Your name must be at least 3 characters long! 😩")
+                return
+            }
+            break
+        case 3:
+            guard gender.count > 1 else {
+                showAlert(title: "Please select a gender before moving forward.")
+                return
+            }
+            break
+        default:
+            break
+        }
         
         if onboardingState == 3 {
             //sign in
+            signIn()
         } else {
             withAnimation(.spring()) {
                 onboardingState += 1
             }
         }
         
+    }
+    
+    func signIn() {
+        currentUserName = name
+        currentUserAge = String(Int(age))
+        currentUserGender = gender
+        withAnimation(.spring()) {
+            currentUserSignedIn = true
+        }
+        
+    }
+    
+    func showAlert(title: String) {
+        alertTitle = title
+        showAlert.toggle()
     }
 }
